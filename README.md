@@ -1,69 +1,48 @@
-# 驗證產出 — sdlc-agentic-platform-dotnet × ICA LLM
+# 平台產出 — 壽險保費試算(Life Premium).NET 版
 
-本分支存放對 [sdlc-agentic-platform-dotnet](https://github.com/ChunPingWang/sdlc-agentic-platform-dotnet)
-所做的 **LLM 連通性驗證與 SDLC 流水線實測的全部產出**(2026-09-14 執行)。
+本分支是 **SDLC Agentic Platform 實際操作後的產出物**(2026-09-14,LLM:ICA Gateway `claude-sonnet-4-5`):
+以「壽險新保件保費試算」需求文件為輸入,經平台 REST API(契約同
+[sdlc-agentic-platform-dotnet](https://github.com/ChunPingWang/sdlc-agentic-platform-dotnet) `specs/openapi.yaml`)
+走完 規格 → BRD 套版 → 產碼 → 修正 的完整流水線。
 
-**結論:✅ 全部通過** — HTTP 層 3/3、.NET 技術棧層 5/5、SDLC 流水線 3/3。
-完整數據見 [VERIFICATION-REPORT.md](VERIFICATION-REPORT.md);平台本身的說明請見平台 repo 的 README。
+## 三類產出物
 
-## 產出目錄
+| # | 產出物 | 位置 | 由平台哪個機制產生 |
+|---|--------|------|-------------------|
+| 1 | **Gherkin 規格**(zh-TW,14 場景,v2) | [`specs/features/01-壽險新保件保費試算.feature`](specs/features/01-壽險新保件保費試算.feature) | BDD 規格 Agent 串流產出 → ArtifactExtractor 抽取 ```gherkin fence → `GET /api/artifacts/{id}/download?format=feature` |
+| 2 | **套版後的 Word 文件**(BRD) | [`docs/BRD-壽險保費試算.docx`](docs/BRD-壽險保費試算.docx) | BRD 業務文件 Agent 產出 `brdFill` JSON(values + 14 個 scenarios)→ `POST /api/docx/fill` 於內建 BRD Word 模板套版(樣式保留) |
+| 3 | **生成程式碼(.NET)** | [`LifePremium.slnx`](LifePremium.slnx) + [`src/`](src/) + [`tests/`](tests/) | 以平台「新增 Agent Profile」建立 **.NET 產碼 Agent**(C# 14 / .NET 10 / DDD / xUnit)產出 21 檔 |
 
-```
-.
-├── VERIFICATION-REPORT.md        ← 驗證報告(三層驗證的方法、數據、結論與建議)
-├── verification/                 ← 驗證工具與證據
-│   ├── IcaVerify/                ← .NET 10 驗證程式(M.E.AI IChatClient → ICA,T1~T5 + gen 模式)
-│   ├── prompts/                  ← FSD/SD/TaskList 生成所用的完整提示檔(可逐字重現)
-│   └── evidence/
-│       ├── http-check.md         ← curl 直連 ICA Gateway 的原始回應(金鑰已遮罩)
-│       └── icaverify-run.md      ← IcaVerify T1~T5 執行輸出(5/5 通過)
-└── sdlc/                         ← 流水線實測產出(素材取自 sdlc-demo-copilot 的 fsd/sd skill)
-    ├── inputs/LIFE-PREMIUM-requirements.md   ← 需求輸入(壽險保費試算)
-    ├── fsd/output/
-    │   ├── FSD-LIFE-v1.0.md                  ← LLM 產出:功能規格文件(13 章,23,572 字元)
-    │   └── features/*.feature                ← 自 FSD 第 13 章抽取的 zh-TW Gherkin(2 檔、17 場景)
-    └── sd/output/
-        ├── SD-LIFE-v1.0.md                   ← LLM 產出:系統設計文件(13 章,16,889 字元)
-        └── TASK-LIST-LIFE-v1.0.md            ← LLM 產出:開發工作清單(Red/Green/Refactor,27,238 字元)
-```
-
-## 產出是怎麼來的
-
-| 產出 | 生成方式 |
-|------|---------|
-| `verification/evidence/http-check.md` | `curl` 直連 `{ICA_API_URL}/v1/models`、`/v1/chat/completions`(非串流 + SSE),留存原始回應 |
-| `verification/evidence/icaverify-run.md` | 執行 `verification/IcaVerify`(僅透過 M.E.AI `IChatClient` 抽象、金鑰只讀環境變數)之 stdout |
-| `sdlc/fsd/output/FSD-LIFE-v1.0.md` | `IcaVerify gen` 串流呼叫 `claude-sonnet-4-5`;system = generate-fsd SKILL + FSD 模板,user = 需求文件(181.4 s) |
-| `sdlc/sd/output/SD-LIFE-v1.0.md` | 同上;system = generate-sd SKILL + SD/ADR 模板 + 6 個既有 Accepted ADR,user = 上一步 FSD(97.5 s) |
-| `sdlc/sd/output/TASK-LIST-LIFE-v1.0.md` | 同上;generate-sd Phase 2 規範,user = 上一步 SD(128.9 s) |
-| `sdlc/fsd/output/features/*.feature` | 以正規表達式抽取 FSD 第 13 章的 ```` ```gherkin ```` code fence(平台 ArtifactExtractor 行為驗證) |
-
-三次文件生成所用提示皆完整保留於 [verification/prompts/](verification/prompts/),
-skill 原始 HITL 停點在本次自動化驗證中以提示明示略過;正式採用前仍應人工審閱。
-
-## 重現方式
-
-前置:.NET 10 SDK、ICA 金鑰。
+**程式碼驗證:`dotnet build` 0 警告 0 錯誤;`dotnet test` 26/26 通過。**
 
 ```bash
-export ICA_API_URL="https://api.nextgen-beta.ica.ibm.com/ica"
-export ICA_CLAUDE_KEY="sk-********"          # 切勿寫入任何檔案
-
-cd verification/IcaVerify
-dotnet run                                    # T1~T5,期望 5/5 通過(約 15 秒)
-
-# (選用)重跑 FSD 生成(約 3 分鐘)
-dotnet run -- gen ../prompts/fsd-system.md ../prompts/fsd-user.md /tmp/FSD-out.md
+dotnet test   # 需 .NET 10 SDK;LifePremium.Domain(純業務)/ Application / Tests
 ```
 
-換模型:設 `ICA_MODEL=claude-haiku-4-5`(預設 `claude-sonnet-4-5`)。
+## 產出流程(含兩次真實修正迴圈)
 
-## 驗證結果摘要
+完整對話同一條(`pipeline/run-meta.json` 有 conversationId 與各步 token 用量),
+每步的原始請求/回覆保留在 [`pipeline/`](pipeline/):
 
-| 層次 | 測項 | 結果 |
-|------|------|------|
-| L1 HTTP(curl) | models / 非串流 chat / SSE 串流 | ✅ 3/3,HTTP 200,標準 OpenAI 協定;base path 為 `{ICA_API_URL}/v1` |
-| L2 .NET(IcaVerify) | 模型目錄、非串流、串流、System Prompt、gherkin fence | ✅ 5/5 |
-| L3 流水線 | FSD → SD → Task List 生成 + feature 抽取 | ✅ 3/3,章節結構、mermaid、FR/ADR 索引檢核全過 |
+| 步驟 | Agent | 動作 | 結果 |
+|------|-------|------|------|
+| 1 | BDD 規格 Agent | 需求文件 → Gherkin | `GHERKIN v1` artifact(14 場景) |
+| 2 | BRD 業務文件 Agent | Gherkin → `brdFill` JSON → `/api/docx/fill` | 套版 `.docx`(26 KB) |
+| 3 | .NET 產碼 Agent(平台新增) | Gherkin → C# 方案(slnx + 3 專案 21 檔) | build ✅;test 13/26 ❌ |
+| 4 | .NET 產碼 Agent | 回饋測試失敗(保額「萬元/元」單位換算 bug)| 修正 `PremiumCalculator.cs` → test 25/26 |
+| 5 | BDD 規格 Agent | 回饋規格算術錯誤(`54000÷12×1.03` 應為 4635 非 4633)| **`GHERKIN v2`** artifact(產出物版本化)|
+| 6 | .NET 產碼 Agent | 規格 v2 → 同步測試預期值 | **test 26/26 ✅** |
 
-*LLM 生成之 FSD/SD/Task List 為驗證示範產出,採用前應經 HITL 審閱。*
+步驟 4~6 展示平台的核心工作模式:**產出 → 驗證 → 把證據回饋給 Agent → 產出新版本**;
+Gherkin v1→v2 即平台 artifact 版本鏈(`GET /api/conversations/{id}/artifacts?type=GHERKIN` 可 diff)。
+
+## 人工介入紀錄(全部列出)
+
+1. `LifePremium.slnx` XML 大小寫修正一處(LLM 輸出 `<project path>`,slnx schema 要求 `<Project Path>`)— 唯一直接改檔
+2. 其餘所有程式碼/規格/文件內容均由平台 Agent 產生;兩次修正(步驟 4、5~6)也是把證據回饋給 Agent 由其產出
+
+## 輸入與環境
+
+- 需求輸入:[sdlc-demo-copilot](https://github.com/ChunPingWang/sdlc-demo-copilot) `sdlc/inputs/LIFE-PREMIUM-requirements.md`(BR-001~BR-005 + 費率表)
+- 平台後端以環境變數 `ICA_API_URL` / `ICA_CLAUDE_KEY` 連線 IBM ICA(OpenAI-Compatible);金鑰未落地任何檔案
+- `promptVariables`:`project_name=壽險保費試算(Life Premium)`、`gherkin_locale=zh-TW`

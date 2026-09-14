@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/LifePremium.Domain/LifePremium.Domain.csproj" />
+  <Project Path="src/LifePremium.Application/LifePremium.Application.csproj" />
+  <Project Path="tests/LifePremium.Tests/LifePremium.Tests.csproj" />
+</Solution>

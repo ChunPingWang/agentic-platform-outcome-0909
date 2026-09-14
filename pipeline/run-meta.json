@@ -1,0 +1,35 @@
+{
+  "conversationId": "09ed8ebd-5f56-47e1-bb76-42cb67f897c5",
+  "model": "claude-sonnet-4-5",
+  "steps": {
+    "s1": "d8341db6-3f05-4d1b-a576-79004d4e5027",
+    "s2": "9181c3cb-adfb-4fd2-8df5-508257cc301d",
+    "s3": "a0027afe-1a5e-48d8-955a-7fff75cbbc42"
+  },
+  "usage": {
+    "s1": {
+      "usage": {
+        "promptTokens": 1922,
+        "completionTokens": 4491
+      },
+      "elapsedMs": 49222,
+      "ttftMs": 2473
+    },
+    "s2": {
+      "usage": {
+        "promptTokens": 12148,
+        "completionTokens": 20830
+      },
+      "elapsedMs": 199201,
+      "ttftMs": 1862
+    },
+    "s3": {
+      "usage": {
+        "promptTokens": 35212,
+        "completionTokens": 9718
+      },
+      "elapsedMs": 90368,
+      "ttftMs": 2699
+    }
+  }
+}
