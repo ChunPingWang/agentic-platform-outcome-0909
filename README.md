@@ -2,7 +2,7 @@
 
 本分支是 **SDLC Agentic Platform 實際操作後的產出物**(2026-09-14,LLM:ICA Gateway `claude-sonnet-4-5`):
 以「壽險新保件保費試算」需求文件為輸入,經平台 REST API(契約同
-[sdlc-agentic-platform-dotnet](https://github.com/ChunPingWang/sdlc-agentic-platform-dotnet) `specs/openapi.yaml`)
+[gherkins-converter-dotnet](https://github.com/ChunPingWang/gherkins-converter-dotnet) `specs/openapi.yaml`)
 走完 規格 → BRD 套版 → 產碼 → 修正 的完整流水線。
 
 ## 三類產出物
